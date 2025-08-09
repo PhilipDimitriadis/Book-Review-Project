@@ -9,7 +9,7 @@ export const searchBooks = async (query: string) => {
             throw new Error("HTTP error!")
         }
         const data = await response.json();
-        return data.results;
+        return data.docs || [];
     } catch (error) {
         console.error(error);
         throw error;

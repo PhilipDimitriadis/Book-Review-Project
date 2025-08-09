@@ -10,7 +10,7 @@ interface Book {
     first_publish_year?: number;
     isbn?: string[];
     cover_i?: number;
-    [key: string]: any;
+    thumbnail?: string;
 }
 
 const Home = () => {
@@ -60,13 +60,14 @@ const Home = () => {
                         className="px-4 py-3 text-base border-2 border-black rounded-full flex-none w-124 sm:w-72 md:w-80 lg:w-96 xl:w-[28rem] mr-2 focus:outline-none focus:ring-2"
                         value={search}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                        disabled={loading}
                     />
                     <button
                         type="submit"
                         disabled={loading || !search.trim()}
                         className="px-6 py-3 text-base w-20 text-gray-500 border-none rounded-full cursor-pointer duration-300 hover:bg-gray-600 disabled:bg-gray-900 disabled:cursor-not-allowed"
                     >
-                        <SearchIcon className="h-5 text-white" />
+                        <SearchIcon className="h-5 w-5" />
                     </button>
                 </form>
             </div>
@@ -86,19 +87,19 @@ const Home = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {books.map((book: Book) => {
                             // Add safety check for book.id
-                            if (!book || !book.id) {
+                            if (!book || !book.key) {
                                 console.warn("Invalid book object:", book);
                                 return null;
                             }
 
                             // Temporary fallback while BookCover is empty
                             return (
-                                <div key={book.id} className="border rounded-lg p-4 shadow-sm">
+                                <div key={book.key} className="border rounded-lg p-4 shadow-sm">
                                     <h3 className="font-semibold text-lg mb-2">
                                         {book.title || "Unknown Title"}
                                     </h3>
                                     <p className="text-gray-600 mb-2">
-                                        {book.author || "Unknown Author"}
+                                        {book.author_name || "Unknown Author"}
                                     </p>
                                     {book.thumbnail && (
                                         <img
@@ -108,13 +109,12 @@ const Home = () => {
                                         />
                                     )}
                                     <p className="text-sm text-gray-500 mt-2">
-                                        {book.publishedDate || "Unknown Date"}
+                                        {book.first_publish_year || "Unknown Date"}
                                     </p>
                                 </div>
                             );
 
-                            // Uncomment this when your BookCover component is ready:
-                            // return <BookCover key={book.id} book={book} />;
+                            return <BookCover key={book.key} book={book} />;
                         })}
 
                         {!loading && hasSearched && books.length === 0 && (
