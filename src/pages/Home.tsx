@@ -32,10 +32,8 @@ const Home = () => {
             const searchResults = await searchBooks(search);
             console.log("Search results:", searchResults); // Debug log
 
-            // Ensure searchResults is an array
             if (Array.isArray(searchResults)) {
                 setBooks(searchResults);
-                setError(null);
             } else {
                 console.error("Search results is not an array:", searchResults);
                 setBooks([]);
@@ -70,6 +68,15 @@ const Home = () => {
                         <SearchIcon className="h-5 w-5" />
                     </button>
                 </form>
+
+                <div className="text-center text-gray-600 text-sm max-w-2xl px-4">
+                    <p className="mb-2">💡 <strong>Search Tips:</strong></p>
+                    <p className="text-xs">
+                        Try specific book titles like "The Great Gatsby", author names like "Stephen King",
+                        or use quotes for exact matches like "To Kill a Mockingbird"
+                    </p>
+                </div>
+
             </div>
 
             {error && (
@@ -85,32 +92,46 @@ const Home = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {books.map((book: Book) => {
-                            // Add safety check for book.id
-                            if (!book || !book.key) {
-                                console.warn("Invalid book object:", book);
+                        {books.map((book: Book, index: number) => {
+                            const bookId = book.key || `book-${index}`;
+
+                            // Check for required fields
+                            if (!book || !book.title) {
                                 return null;
                             }
 
-                            // Temporary fallback while BookCover is empty
+                            const authorName = book.author_name && book.author_name.length > 0
+                                ? book.author_name[0]
+                                : "Unknown Author";
+
+                            const coverUrl = book.cover_i
+                                ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+                                : null;
+
                             return (
-                                <div key={book.key} className="border rounded-lg p-4 shadow-sm">
-                                    <h3 className="font-semibold text-lg mb-2">
-                                        {book.title || "Unknown Title"}
+                                <div key={bookId} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                                        {book.title}
                                     </h3>
                                     <p className="text-gray-600 mb-2">
-                                        {book.author_name || "Unknown Author"}
+                                        {authorName}
                                     </p>
-                                    {book.thumbnail && (
+                                    {coverUrl && (
                                         <img
-                                            src={book.thumbnail}
-                                            alt={book.title || "Book cover"}
-                                            className="w-full h-48 object-cover rounded"
+                                            src={coverUrl}
+                                            alt={`${book.title} cover`}
+                                            className="w-full h-48 object-cover rounded mb-2"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                            }}
                                         />
                                     )}
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        {book.first_publish_year || "Unknown Date"}
+                                    <p className="text-sm text-gray-500">
+                                        {book.first_publish_year ? `Published: ${book.first_publish_year}` : "Publication date unknown"}
                                     </p>
+                                    <div className="mt-2 text-blue-600 text-sm font-medium">
+                                        Click to view details →
+                                    </div>
                                 </div>
                             );
 
