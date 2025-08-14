@@ -2,6 +2,7 @@ import {useState} from "react";
 import {SearchIcon} from "lucide-react";
 import {searchBooks} from "../services/api.ts";
 import BookCover from "../components/BookCover.tsx";
+import {useNavigate} from "react-router-dom";
 
 interface Book {
     key: string;
@@ -14,6 +15,7 @@ interface Book {
 }
 
 const Home = () => {
+    const navigate = useNavigate();
     const [search, setSearch] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -27,10 +29,11 @@ const Home = () => {
 
         setLoading(true);
         setHasSearched(true);
+        setError(null);
 
         try {
             const searchResults = await searchBooks(search);
-            console.log("Search results:", searchResults); // Debug log
+            console.log("Search results:", searchResults);
 
             if (Array.isArray(searchResults)) {
                 setBooks(searchResults);
@@ -58,14 +61,13 @@ const Home = () => {
                         className="px-4 py-3 text-base border-2 border-black rounded-full flex-none w-124 sm:w-72 md:w-80 lg:w-96 xl:w-[28rem] mr-2 focus:outline-none focus:ring-2"
                         value={search}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                        disabled={loading}
                     />
                     <button
                         type="submit"
                         disabled={loading || !search.trim()}
                         className="px-6 py-3 text-base w-20 text-gray-500 border-none rounded-full cursor-pointer duration-300 hover:bg-gray-600 disabled:bg-gray-900 disabled:cursor-not-allowed"
                     >
-                        <SearchIcon className="h-5 w-5" />
+                        <SearchIcon className="h-5 text-white" />
                     </button>
                 </form>
 
@@ -95,7 +97,6 @@ const Home = () => {
                         {books.map((book: Book, index: number) => {
                             const bookId = book.key || `book-${index}`;
 
-                            // Check for required fields
                             if (!book || !book.title) {
                                 return null;
                             }
@@ -109,7 +110,13 @@ const Home = () => {
                                 : null;
 
                             return (
-                                <div key={bookId} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                                <div
+                                    key={bookId}
+                                    className="border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                                    onClick={() => {
+                                        navigate(`/book/${encodeURIComponent(book.key.replace('/works/', ''))}`);
+                                    }}
+                                >
                                     <h3 className="font-semibold text-lg mb-2 line-clamp-2">
                                         {book.title}
                                     </h3>
@@ -140,7 +147,7 @@ const Home = () => {
 
                         {!loading && hasSearched && books.length === 0 && (
                             <p className="text-gray-500 text-center col-span-full py-8">
-                                No results found
+                                No results found for "{search}"
                             </p>
                         )}
                     </div>
