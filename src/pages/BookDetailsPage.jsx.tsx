@@ -118,7 +118,7 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                 helpful: 0
             };
 
-            // Here you would submit to your backend API
+            // backend API
             // await submitReviewToAPI(bookKey, newReview);
 
             setReviews([newReview, ...reviews]);
@@ -224,11 +224,9 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
 
             <div className="max-w-6xl mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column - Book Info */}
                     <div className="lg:col-span-2">
                         <div className="bg-white rounded-lg shadow-sm p-6">
                             <div className="flex flex-col md:flex-row gap-6">
-                                {/* Book Cover */}
                                 <div className="flex-shrink-0">
                                     {getCoverUrl() ? (
                                         <img
@@ -243,7 +241,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                     )}
                                 </div>
 
-                                {/* Book Details */}
                                 <div className="flex-1">
                                     <h1 className="text-3xl font-bold text-gray-900 mb-2">{book.title}</h1>
 
@@ -277,7 +274,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                         </div>
                                     )}
 
-                                    {/* Rating Summary */}
                                     <div className="flex items-center gap-4 mb-4">
                                         <div className="flex items-center gap-2">
                                             {renderStars(Math.round(parseFloat(getAverageRating())))}
@@ -286,7 +282,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons */}
                                     <div className="flex gap-3">
                                         <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
                                             Add to Reading List
@@ -299,13 +294,11 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                 </div>
                             </div>
 
-                            {/* Description */}
                             <div className="mt-8">
                                 <h2 className="text-xl font-semibold mb-4">Description</h2>
                                 <p className="text-gray-700 leading-relaxed">{getBookDescription()}</p>
                             </div>
 
-                            {/* Subjects/Tags */}
                             {book.subjects && book.subjects.length > 0 && (
                                 <div className="mt-6">
                                     <h3 className="text-lg font-semibold mb-3">Subjects</h3>
@@ -324,12 +317,10 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                         </div>
                     </div>
 
-                    {/* Right Column - Reviews */}
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
                             <h2 className="text-xl font-semibold mb-4">Reviews</h2>
 
-                            {/* Write Review Section */}
                             {!userHasReviewed && !isWritingReview ? (
                                 <button
                                     onClick={() => setIsWritingReview(true)}
@@ -377,7 +368,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                 </div>
                             )}
 
-                            {/* Reviews List */}
                             <div className="space-y-4 max-h-96 overflow-y-auto">
                                 {reviews.length === 0 ? (
                                     <p className="text-gray-500 text-center">No reviews yet. Be the first to review!</p>
