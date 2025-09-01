@@ -19,6 +19,7 @@ const Header = () => {
                     >
                         My Reviews
                     </Link>
+                    <AuthButton/>
                 </div>
 
             </div>

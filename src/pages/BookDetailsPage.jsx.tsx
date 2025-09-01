@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Star, Heart, BookOpen, User, Calendar, Globe, ThumbsUp, Edit3 } from "lucide-react";
+import { ArrowLeft, Star, Heart, BookOpen, Calendar, Globe, ThumbsUp, Edit3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface BookDetail {
@@ -9,7 +9,6 @@ interface BookDetail {
     description?: string | { value: string };
     covers?: number[];
     first_publish_date?: string;
-    subjects?: string[];
     publishers?: string[];
     isbn_10?: string[];
     isbn_13?: string[];
@@ -246,7 +245,7 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
 
                                     {book.authors && book.authors.length > 0 && (
                                         <div className="flex items-center gap-2 mb-3">
-                                            <User className="h-4 w-4 text-gray-500" />
+                                            {/*<User className="h-4 w-4 text-gray-500" />*/}
                                             <span className="text-lg text-gray-600">
                                                 {book.authors.map(author => author.name).join(', ')}
                                             </span>
@@ -281,16 +280,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                             <span className="text-gray-600">({reviews.length} reviews)</span>
                                         </div>
                                     </div>
-
-                                    <div className="flex gap-3">
-                                        <button className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                                            Add to Reading List
-                                        </button>
-                                        <button className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
-                                            <Heart className="h-4 w-4" />
-                                            Favorite
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
 
@@ -299,21 +288,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                 <p className="text-gray-700 leading-relaxed">{getBookDescription()}</p>
                             </div>
 
-                            {book.subjects && book.subjects.length > 0 && (
-                                <div className="mt-6">
-                                    <h3 className="text-lg font-semibold mb-3">Subjects</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {book.subjects.slice(0, 10).map((subject, index) => (
-                                            <span
-                                                key={index}
-                                                className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                                            >
-                                                {subject}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
 
