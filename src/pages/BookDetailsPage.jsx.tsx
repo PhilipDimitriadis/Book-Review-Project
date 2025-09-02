@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Star, BookOpen, Calendar, Globe, ThumbsUp, Edit3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { reviewsAPI, statsAPI } from "../services/api";
+import { useAuth } from "../hooks/useAuth.ts";
 
 interface BookDetail {
     key: string;
@@ -18,34 +20,72 @@ interface BookDetail {
 }
 
 interface Review {
-    id: string;
-    userId: string;
-    userName: string;
+    id: number;
+    external_book_id: string;
+    book_title: string;
+    book_author: string;
+    user_id: number;
+    username: string;
     rating: number;
     comment: string;
-    date: string;
-    helpful: number;
+    created_at: string;
+    updated_at: string;
+}
+
+interface BookStats {
+    review_count: number;
+    average_rating: number;
+    five_stars: number;
+    four_stars: number;
+    three_stars: number;
+    two_stars: number;
+    one_stars: number;
+}
+
+interface CurrentUser {
+    id: number;
+    username: string;
+    email: string;
 }
 
 interface BookDetailPageProps {
-    bookKey: string; // This would come from router params
+    bookKey: string;
 }
 
 const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
     const navigate = useNavigate();
     const [book, setBook] = useState<BookDetail | null>(null);
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [bookStats, setBookStats] = useState<BookStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userRating, setUserRating] = useState(0);
     const [userReview, setUserReview] = useState("");
     const [isWritingReview, setIsWritingReview] = useState(false);
     const [userHasReviewed, setUserHasReviewed] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [backendAvailable, setBackendAvailable] = useState(false);
+    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+    // Only destructure what you actually use to avoid TypeScript warnings
+    const { isAuthenticated, accessToken } = useAuth();
 
     useEffect(() => {
         fetchBookDetails();
-        fetchReviews();
-    }, [bookKey]);
+        checkBackendAndFetchReviews();
+
+        // If user is authenticated, set up mock user (replace with actual user fetching)
+        if (isAuthenticated && accessToken) {
+            // Mock user - replace with actual API call
+            setCurrentUser({
+                id: 1,
+                username: "demo_user",
+                email: "demo@example.com"
+            });
+        } else {
+            setCurrentUser(null);
+        }
+    }, [bookKey, isAuthenticated, accessToken]);
 
     const fetchBookDetails = async () => {
         try {
@@ -59,89 +99,162 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
         }
     };
 
-    const fetchReviews = async () => {
+    const checkBackendAndFetchReviews = async () => {
         try {
-            // This would be your own API endpoint for reviews
-            // For now, we'll use mock data
-            const mockReviews: Review[] = [
-                {
-                    id: "1",
-                    userId: "user1",
-                    userName: "Sarah Johnson",
-                    rating: 5,
-                    comment: "Absolutely captivating! One of the best books I've read this year. The character development is exceptional.",
-                    date: "2024-01-15",
-                    helpful: 12
-                },
-                {
-                    id: "2",
-                    userId: "user2",
-                    userName: "Mike Chen",
-                    rating: 4,
-                    comment: "Great read overall. The plot moves at a good pace, though some parts felt a bit slow. Would recommend!",
-                    date: "2024-01-10",
-                    helpful: 8
-                },
-                {
-                    id: "3",
-                    userId: "user3",
-                    userName: "Emma Wilson",
-                    rating: 5,
-                    comment: "This book completely changed my perspective. Beautifully written with incredible depth.",
-                    date: "2024-01-05",
-                    helpful: 15
-                }
-            ];
-            setReviews(mockReviews);
+            // Check if your backend is running
+            const healthResponse = await fetch('http://localhost:5000/api/health');
+            if (healthResponse.ok) {
+                setBackendAvailable(true);
+                await fetchReviewsFromDatabase();
+            } else {
+                console.log("Backend not available, using mock reviews");
+                setBackendAvailable(false);
+                setMockReviews();
+            }
         } catch (err) {
-            console.error("Failed to fetch reviews:", err);
+            console.log("Backend not available, using mock reviews");
+            setBackendAvailable(false);
+            setMockReviews();
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchReviewsFromDatabase = async () => {
+        try {
+            const bookId = bookKey;
+
+            const [reviewsData, statsData] = await Promise.all([
+                reviewsAPI.getByBookId(bookId),
+                statsAPI.getBookStats(bookId)
+            ]);
+
+            setReviews(reviewsData);
+            setBookStats(statsData);
+
+            // Check if current user has already reviewed this book
+            if (currentUser && isAuthenticated) {
+                const userReviewExists = reviewsData.some(
+                    (review: Review) => review.user_id === currentUser.id
+                );
+                setUserHasReviewed(userReviewExists);
+            }
+
+        } catch (err) {
+            console.error("Failed to fetch reviews from database:", err);
+            setMockReviews();
+        }
+    };
+
+    const setMockReviews = () => {
+        const mockReviews: Review[] = [
+            {
+                id: 1,
+                external_book_id: bookKey,
+                book_title: book?.title || 'Unknown',
+                book_author: book?.authors?.[0]?.name || 'Unknown',
+                user_id: 2,
+                username: "Sarah Johnson",
+                rating: 5,
+                comment: "Absolutely captivating! One of the best books I've read this year.",
+                created_at: "2024-01-15T00:00:00Z",
+                updated_at: "2024-01-15T00:00:00Z"
+            },
+            {
+                id: 2,
+                external_book_id: bookKey,
+                book_title: book?.title || 'Unknown',
+                book_author: book?.authors?.[0]?.name || 'Unknown',
+                user_id: 3,
+                username: "Mike Chen",
+                rating: 4,
+                comment: "Great read overall. Would recommend!",
+                created_at: "2024-01-10T00:00:00Z",
+                updated_at: "2024-01-10T00:00:00Z"
+            }
+        ];
+
+        setReviews(mockReviews);
+        setBookStats({
+            review_count: 2,
+            average_rating: 4.5,
+            five_stars: 1,
+            four_stars: 1,
+            three_stars: 0,
+            two_stars: 0,
+            one_stars: 0
+        });
+    };
+
     const submitReview = async () => {
+        if (!isAuthenticated || !currentUser) {
+            alert("Please log in to submit a review");
+            return;
+        }
+
         if (userRating === 0 || userReview.trim() === "") {
             alert("Please provide both a rating and review comment");
             return;
         }
 
+        setSubmittingReview(true);
+
         try {
-            const newReview: Review = {
-                id: Date.now().toString(),
-                userId: "current_user", // This would come from your auth system
-                userName: "You", // This would come from your auth system
-                rating: userRating,
-                comment: userReview,
-                date: new Date().toISOString().split('T')[0],
-                helpful: 0
-            };
+            if (backendAvailable) {
+                const reviewData = {
+                    external_book_id: bookKey,
+                    book_title: book?.title || 'Unknown Title',
+                    book_author: book?.authors?.[0]?.name || 'Unknown Author',
+                    user_id: currentUser.id,
+                    rating: userRating,
+                    comment: userReview.trim()
+                };
 
-            // backend API
-            // await submitReviewToAPI(bookKey, newReview);
+                const response = await fetch('http://localhost:5000/api/reviews', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(reviewData)
+                });
 
-            setReviews([newReview, ...reviews]);
+                if (response.ok) {
+                    await fetchReviewsFromDatabase();
+                    alert("Review submitted successfully!");
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to submit review: ${error.error || 'Unknown error'}`);
+                }
+            } else {
+                // Mock submission
+                const newReview: Review = {
+                    id: Date.now(),
+                    external_book_id: bookKey,
+                    user_id: currentUser.id,
+                    username: currentUser.username,
+                    rating: userRating,
+                    comment: userReview,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    book_title: book?.title || '',
+                    book_author: book?.authors?.[0]?.name || ''
+                };
+
+                setReviews([newReview, ...reviews]);
+                alert("Review submitted! (Demo mode)");
+            }
+
             setUserRating(0);
             setUserReview("");
             setIsWritingReview(false);
             setUserHasReviewed(true);
+
         } catch (error) {
+            console.error("Failed to submit review:", error);
             alert("Failed to submit review. Please try again.");
-        }
-    };
-
-    const markReviewHelpful = async (reviewId: string) => {
-        try {
-            // Here you would call your backend API
-            // await markReviewHelpfulAPI(reviewId);
-
-            setReviews(reviews.map(review =>
-                review.id === reviewId
-                    ? { ...review, helpful: review.helpful + 1 }
-                    : review
-            ));
-        } catch (error) {
-            console.error("Failed to mark review as helpful:", error);
+        } finally {
+            setSubmittingReview(false);
         }
     };
 
@@ -159,9 +272,16 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
     };
 
     const getAverageRating = () => {
-        if (reviews.length === 0) return 0;
+        if (backendAvailable && bookStats) {
+            return bookStats.average_rating?.toFixed(1) || "0.0";
+        }
+        if (reviews.length === 0) return "0.0";
         const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
         return (sum / reviews.length).toFixed(1);
+    };
+
+    const getTotalReviews = () => {
+        return backendAvailable ? (bookStats?.review_count || 0) : reviews.length;
     };
 
     const renderStars = (rating: number, interactive = false, onRate?: (rating: number) => void) => {
@@ -180,6 +300,14 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                 ))}
             </div>
         );
+    };
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     };
 
     if (loading) {
@@ -208,6 +336,11 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            {/*/!* Backend Status *!/*/}
+            {/*<div className={`text-center py-2 text-sm ${backendAvailable ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>*/}
+            {/*    {backendAvailable ? '✅ Connected to your database' : '⚠️ Demo mode - database not connected'}*/}
+            {/*</div>*/}
+
             {/* Header */}
             <div className="bg-white shadow-sm">
                 <div className="max-w-6xl mx-auto px-4 py-4">
@@ -245,7 +378,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
 
                                     {book.authors && book.authors.length > 0 && (
                                         <div className="flex items-center gap-2 mb-3">
-                                            {/*<User className="h-4 w-4 text-gray-500" />*/}
                                             <span className="text-lg text-gray-600">
                                                 {book.authors.map(author => author.name).join(', ')}
                                             </span>
@@ -277,7 +409,7 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                         <div className="flex items-center gap-2">
                                             {renderStars(Math.round(parseFloat(getAverageRating())))}
                                             <span className="text-lg font-semibold">{getAverageRating()}</span>
-                                            <span className="text-gray-600">({reviews.length} reviews)</span>
+                                            <span className="text-gray-600">({getTotalReviews()} reviews)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -287,7 +419,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                 <h2 className="text-xl font-semibold mb-4">Description</h2>
                                 <p className="text-gray-700 leading-relaxed">{getBookDescription()}</p>
                             </div>
-
                         </div>
                     </div>
 
@@ -295,7 +426,11 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                         <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
                             <h2 className="text-xl font-semibold mb-4">Reviews</h2>
 
-                            {!userHasReviewed && !isWritingReview ? (
+                            {!isAuthenticated ? (
+                                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-blue-700 text-sm">Please log in to write a review</p>
+                                </div>
+                            ) : !userHasReviewed && !isWritingReview ? (
                                 <button
                                     onClick={() => setIsWritingReview(true)}
                                     className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors mb-6 flex items-center justify-center gap-2"
@@ -324,9 +459,10 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                     <div className="flex gap-2 mt-3">
                                         <button
                                             onClick={submitReview}
-                                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                                            disabled={submittingReview}
+                                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm disabled:bg-gray-400"
                                         >
-                                            Submit Review
+                                            {submittingReview ? 'Submitting...' : 'Submit Review'}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -349,19 +485,15 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                     reviews.map((review) => (
                                         <div key={review.id} className="p-4 border border-gray-200 rounded-lg">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="font-semibold text-sm">{review.userName}</span>
-                                                <span className="text-xs text-gray-500">{review.date}</span>
+                                                <span className="font-semibold text-sm">{review.username}</span>
+                                                <span className="text-xs text-gray-500">{formatDate(review.created_at)}</span>
                                             </div>
                                             <div className="mb-2">
                                                 {renderStars(review.rating)}
                                             </div>
                                             <p className="text-gray-700 text-sm mb-2">{review.comment}</p>
                                             <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                <span>{review.helpful} found this helpful</span>
-                                                <button
-                                                    className="text-blue-600 hover:underline flex items-center gap-1"
-                                                    onClick={() => markReviewHelpful(review.id)}
-                                                >
+                                                <button className="text-blue-600 hover:underline flex items-center gap-1">
                                                     <ThumbsUp className="h-3 w-3" />
                                                     Helpful
                                                 </button>

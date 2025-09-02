@@ -71,13 +71,13 @@ const Home = () => {
                     </button>
                 </form>
 
-                <div className="text-center text-gray-600 text-sm max-w-2xl px-4">
-                    <p className="mb-2">💡 <strong>Search Tips:</strong></p>
-                    <p className="text-xs">
-                        Try specific book titles like "The Great Gatsby", author names like "Stephen King",
-                        or use quotes for exact matches like "To Kill a Mockingbird"
-                    </p>
-                </div>
+                {/*<div className="text-center text-gray-600 text-sm max-w-2xl px-4">*/}
+                {/*    <p className="mb-2">💡 <strong>Search Tips:</strong></p>*/}
+                {/*    <p className="text-xs">*/}
+                {/*        Try specific book titles like "The Great Gatsby", author names like "Stephen King",*/}
+                {/*        or use quotes for exact matches like "To Kill a Mockingbird"*/}
+                {/*    </p>*/}
+                {/*</div>*/}
 
             </div>
 
