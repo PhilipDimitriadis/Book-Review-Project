@@ -36,11 +36,12 @@ export default function LoginPage() {
                 onSubmit={handleSubmit(onSubmit)}
                 className="max-w-sm mx-auto p-8 space-y-4 border rounded"
             >
-                <h1>Login</h1>
+                <h1 className="flex justify-center text-3xl font-bold text-center mb-2 text-gray-800">Welcome Back!</h1>
                 <div>
                     <Label htmlFor="username" className="mb-1"></Label>
                     <Input
                         id="username"
+                        placeholder="Username"
                         autoFocus
                         {...register("username")}
                         disabled={isSubmitting}
@@ -55,6 +56,7 @@ export default function LoginPage() {
                     <Input
                         id="password"
                         type="password"
+                        placeholder="Password"
                         autoFocus
                         {...register("password")}
                         disabled={isSubmitting}
@@ -64,9 +66,11 @@ export default function LoginPage() {
                     )}
                 </div>
 
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Logging ..." : "Login"}
-                </Button>
+                <div className="flex justify-center">
+                    <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Logging ..." : "Login"}
+                    </Button>
+                </div>
             </form>
         </>
     );
