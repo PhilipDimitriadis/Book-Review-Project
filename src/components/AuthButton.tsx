@@ -1,6 +1,6 @@
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router";
+import { useAuth } from "../hooks/useAuth";
+import { Button } from "../components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export function AuthButton() {

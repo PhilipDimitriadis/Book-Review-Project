@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Star, Heart, BookOpen, Calendar, Globe, ThumbsUp, Edit3 } from "lucide-react";
+import { ArrowLeft, Star, BookOpen, Calendar, Globe, ThumbsUp, Edit3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface BookDetail {

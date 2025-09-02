@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { getCookie, setCookie, deleteCookie } from "@/utils/cookies.ts";
+import { getCookie, setCookie, deleteCookie } from "../utils/cookies.ts";
 import { jwtDecode } from "jwt-decode";
-import { login, type LoginFields } from "@/api/login.ts";
+import { login, type LoginFields } from "../api/login.ts";
 import { AuthContext } from "./AuthContext";
 
 type JwtPayload = {
