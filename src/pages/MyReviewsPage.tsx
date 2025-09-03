@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Star, BookOpen, Calendar, Edit3, Trash2 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import {useNavigate} from "react-router-dom";
 
 interface Review {
     id: number;
@@ -19,7 +20,14 @@ const MyReviewsPage = () => {
     const [reviews, setReviews] = useState<Review[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { currentUser, accessToken } = useAuth();
+    // const { currentUser, accessToken } = useAuth();
+
+    const authData = useAuth();
+    console.log('MyReviewsPage - Auth data:', authData);
+
+    const { currentUser, accessToken } = authData;
+    console.log('MyReviewsPage - currentUser:', currentUser);
+    console.log('MyReviewsPage - accessToken:', accessToken);
 
     useEffect(() => {
         if (currentUser) {
@@ -101,13 +109,15 @@ const MyReviewsPage = () => {
         });
     };
 
+    const navigate = useNavigate();
+
     if (!currentUser) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center rounded-l">
                 <div className="text-center">
                     <p className="text-gray-600 mb-4">Please log in to view your reviews</p>
                     <button
-                        onClick={() => window.location.href = '/login'}
+                        onClick={() => navigate("/login") }
                         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
                         Go to Login
