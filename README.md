@@ -49,3 +49,5 @@ Data Flow
 * Review Submission: User writes review, stored in MySQL with hashed book ID
 * Review Display: Reviews fetched from database and displayed with book metadata
 * User Dashboard: Personal reviews retrieved and displayed with management options
+
+![img.png](img.png)
