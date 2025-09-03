@@ -8,6 +8,8 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
@@ -89,7 +91,6 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-app.use(express.urlencoded({ extended: true }));
 
 app.post('/api/login/access-token', async (req, res) => {
     try {
@@ -165,7 +166,7 @@ app.get('/api/reviews/book/:bookId', async (req, res) => {
       SELECT r.*, u.username 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
-      WHERE r.external_book_id = ? 
+      WHERE r.book_id = ? 
       ORDER BY r.created_at DESC
     `, [bookId]);
         res.json(rows);
@@ -175,16 +176,16 @@ app.get('/api/reviews/book/:bookId', async (req, res) => {
     }
 });
 
-app.get('/api/reviews/user/:userId', async (req, res) => {
+app.get('/api/reviews/user/:user_id', async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { user_id } = req.params;
         const [rows] = await pool.execute(`
       SELECT r.*, u.username 
       FROM reviews r 
       JOIN users u ON r.user_id = u.id 
       WHERE r.user_id = ? 
       ORDER BY r.created_at DESC
-    `, [userId]);
+    `, [user_id]);
         res.json(rows);
     } catch (error) {
         console.error('Error fetching user reviews:', error);
@@ -194,20 +195,27 @@ app.get('/api/reviews/user/:userId', async (req, res) => {
 
 app.post('/api/reviews', async (req, res) => {
     try {
-        const { external_book_id, book_title, book_author, user_id, rating, comment } = req.body;
+        console.log('Received review data:', req.body); // Add this line
+        const { book_id, user_id, rating, review_text } = req.body;
 
-        if (!external_book_id || !user_id || !rating) {
-            return res.status(400).json({ error: 'External book ID, user ID, and rating are required' });
+        console.log('Extracted values:');
+        console.log('- book_id:', book_id, typeof book_id);
+        console.log('- user_id:', user_id, typeof user_id);
+        console.log('- rating:', rating, typeof rating);
+        console.log('- review_text:', review_text, typeof review_text);
+
+        if (!book_id || !user_id || !rating) {
+            console.log('Missing fields - book_id:', book_id, 'user_id:', user_id, 'rating:', rating); // Add this
+            return res.status(400).json({ error: 'Book ID, user ID, and rating are required' });
         }
 
         if (rating < 1 || rating > 5) {
             return res.status(400).json({ error: 'Rating must be between 1 and 5' });
         }
 
-        // Check if user already reviewed this book
         const [existing] = await pool.execute(
-            'SELECT id FROM reviews WHERE external_book_id = ? AND user_id = ?',
-            [external_book_id, user_id]
+            'SELECT id FROM reviews WHERE book_id = ? AND user_id = ?',
+            [book_id, user_id]
         );
 
         if (existing.length > 0) {
@@ -215,18 +223,12 @@ app.post('/api/reviews', async (req, res) => {
         }
 
         const [result] = await pool.execute(
-            'INSERT INTO reviews (external_book_id, book_title, book_author, user_id, rating, comment) VALUES (?, ?, ?, ?, ?, ?)',
-            [external_book_id, book_title, book_author, user_id, rating, comment]
+            'INSERT INTO reviews (book_id, user_id, rating, review_text) VALUES (?, ?, ?, ?)',
+            [book_id, user_id, rating, review_text]
         );
 
         res.status(201).json({
             id: result.insertId,
-            external_book_id,
-            book_title,
-            book_author,
-            user_id,
-            rating,
-            comment,
             message: 'Review created successfully'
         });
     } catch (error) {
@@ -238,7 +240,7 @@ app.post('/api/reviews', async (req, res) => {
 app.put('/api/reviews/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { rating, comment } = req.body;
+        const { rating, review_text } = req.body;
 
         if (rating && (rating < 1 || rating > 5)) {
             return res.status(400).json({ error: 'Rating must be between 1 and 5' });
@@ -246,7 +248,7 @@ app.put('/api/reviews/:id', async (req, res) => {
 
         const [result] = await pool.execute(
             'UPDATE reviews SET rating = ?, comment = ? WHERE id = ?',
-            [rating, comment, id]
+            [rating, review_text, id]
         );
 
         if (result.affectedRows === 0) {
@@ -282,17 +284,17 @@ app.get('/api/books/:bookId/stats', async (req, res) => {
         const { bookId } = req.params;
 
         const [rows] = await pool.execute(`
-      SELECT 
-        COUNT(*) as review_count,
-        ROUND(AVG(rating), 1) as average_rating,
-        COUNT(CASE WHEN rating = 5 THEN 1 END) as five_stars,
-        COUNT(CASE WHEN rating = 4 THEN 1 END) as four_stars,
-        COUNT(CASE WHEN rating = 3 THEN 1 END) as three_stars,
-        COUNT(CASE WHEN rating = 2 THEN 1 END) as two_stars,
-        COUNT(CASE WHEN rating = 1 THEN 1 END) as one_stars
-      FROM reviews 
-      WHERE external_book_id = ?
-    `, [bookId]);
+            SELECT
+                COUNT(*) as review_count,
+                ROUND(AVG(rating), 1) as average_rating,
+                COUNT(CASE WHEN rating = 5 THEN 1 END) as five_stars,
+                COUNT(CASE WHEN rating = 4 THEN 1 END) as four_stars,
+                COUNT(CASE WHEN rating = 3 THEN 1 END) as three_stars,
+                COUNT(CASE WHEN rating = 2 THEN 1 END) as two_stars,
+                COUNT(CASE WHEN rating = 1 THEN 1 END) as one_stars
+            FROM reviews
+            WHERE book_id = ?
+        `, [bookId]);
 
         res.json(rows[0]);
     } catch (error) {
@@ -301,16 +303,16 @@ app.get('/api/books/:bookId/stats', async (req, res) => {
     }
 });
 
-app.get('/api/favorites/:userId', async (req, res) => {
+app.get('/api/favorites/:user_id', async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { user_id } = req.params;
         const [rows] = await pool.execute(`
       SELECT f.*, u.username 
       FROM favorites f 
       JOIN users u ON f.user_id = u.id 
       WHERE f.user_id = ? 
       ORDER BY f.created_at DESC
-    `, [userId]);
+    `, [user_id]);
         res.json(rows);
     } catch (error) {
         console.error('Error fetching favorites:', error);
@@ -320,15 +322,15 @@ app.get('/api/favorites/:userId', async (req, res) => {
 
 app.post('/api/favorites', async (req, res) => {
     try {
-        const { user_id, external_book_id, book_title, book_author } = req.body;
+        const { user_id, book_id, book_title, book_author } = req.body;
 
-        if (!user_id || !external_book_id) {
+        if (!user_id || !book_id) {
             return res.status(400).json({ error: 'User ID and book ID are required' });
         }
 
         const [existing] = await pool.execute(
-            'SELECT id FROM favorites WHERE user_id = ? AND external_book_id = ?',
-            [user_id, external_book_id]
+            'SELECT id FROM favorites WHERE user_id = ? AND book_id = ?',
+            [user_id, book_id]
         );
 
         if (existing.length > 0) {
@@ -336,8 +338,8 @@ app.post('/api/favorites', async (req, res) => {
         }
 
         const [result] = await pool.execute(
-            'INSERT INTO favorites (user_id, external_book_id, book_title, book_author) VALUES (?, ?, ?, ?)',
-            [user_id, external_book_id, book_title, book_author]
+            'INSERT INTO favorites (user_id, book_id, book_title, book_author) VALUES (?, ?, ?, ?)',
+            [user_id, book_id, book_title, book_author]
         );
 
         res.status(201).json({
@@ -350,22 +352,19 @@ app.post('/api/favorites', async (req, res) => {
     }
 });
 
-app.delete('/api/favorites/:userId/:bookId', async (req, res) => {
+app.get('/api/reviews/book/:bookId', async (req, res) => {
     try {
-        const { userId, bookId } = req.params;
-
-        const [result] = await pool.execute(
-            'DELETE FROM favorites WHERE user_id = ? AND external_book_id = ?',
-            [userId, bookId]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Favorite not found' });
-        }
-
-        res.json({ message: 'Book removed from favorites' });
+        const { bookId } = req.params;
+        const [rows] = await pool.execute(`
+            SELECT r.*, u.username 
+            FROM reviews r 
+            JOIN users u ON r.user_id = u.id 
+            WHERE r.book_id = ? 
+            ORDER BY r.created_at DESC
+        `, [bookId]);
+        res.json(rows);
     } catch (error) {
-        console.error('Error removing favorite:', error);
+        console.error('Error fetching reviews:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
