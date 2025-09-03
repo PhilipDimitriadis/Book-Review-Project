@@ -4,7 +4,7 @@ A full-stack web application for discovering, reviewing, and rating books using 
 Architecture Overview
 Frontend (React + TypeScript)
 
-*Framework: React 18 with TypeScript
+Framework: React 18 with TypeScript
 Styling: Tailwind CSS
 Routing: React Router
 Icons: Lucide React
