@@ -9,14 +9,14 @@ const Header = () => {
 
                 <div className="text-white text-xl font-bold">
                     <Link to="/" className="">
-                        Book Review
+                        📖 Book Review
                     </Link>
                 </div>
 
                 <div className="text-white text-m font-bold">
                     <Link
                         to="/reviews"
-                        className=""
+                        className="mr-5"
                     >
                         My Reviews
                     </Link>
