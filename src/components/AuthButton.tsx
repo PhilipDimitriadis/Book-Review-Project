@@ -1,10 +1,10 @@
-import { useAuth } from "../hooks/useAuth";
-import { Button } from "../components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import {useAuth} from "../hooks/useAuth";
+import {Button} from "../components/ui/button";
+import {useNavigate} from "react-router-dom";
+import {toast} from "sonner";
 
 export function AuthButton() {
-    const { isAuthenticated, logoutUser } = useAuth();
+    const {isAuthenticated, logoutUser} = useAuth();
     const navigate = useNavigate();
 
     const handleLogin = () => {
