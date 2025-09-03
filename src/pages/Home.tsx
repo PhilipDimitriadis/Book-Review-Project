@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {SearchIcon} from "lucide-react";
+import {BookOpen} from "lucide-react";
 import {searchBooks} from "../services/api.ts";
 import BookCover from "../components/BookCover.tsx";
 import {useNavigate} from "react-router-dom";
@@ -65,9 +65,9 @@ const Home = () => {
                     <button
                         type="submit"
                         disabled={loading || !search.trim()}
-                        className="px-6 py-3 text-base w-20 text-gray-500 border-none rounded-full cursor-pointer duration-300 hover:bg-gray-600 disabled:bg-gray-900 disabled:cursor-not-allowed"
+                        className="flex justify-center py-3 text-base w-20 text-gray-500 border-none rounded-full cursor-pointer duration-300 hover:bg-gray-600 disabled:bg-gray-900 disabled:cursor-not-allowed"
                     >
-                        <SearchIcon className="h-5 text-white" />
+                        <BookOpen className="h-5 text-white" />
                     </button>
                 </form>
 
