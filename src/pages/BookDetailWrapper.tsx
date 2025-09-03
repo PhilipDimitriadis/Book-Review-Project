@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import BookDetailPage from "./BookDetailsPage.jsx.tsx";
+import BookDetailPage from "./BookDetailsPage.tsx";
 
 const BookDetailPageWrapper = () => {
     const { bookKey } = useParams<{ bookKey: string }>();

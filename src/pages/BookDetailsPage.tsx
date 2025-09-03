@@ -21,13 +21,13 @@ interface BookDetail {
 
 interface Review {
     id: number;
-    external_book_id: string;
+    book_id: string;
     book_title: string;
     book_author: string;
     user_id: number;
     username: string;
     rating: number;
-    comment: string;
+    review_text: string;
     created_at: string;
     updated_at: string;
 }
@@ -52,6 +52,17 @@ interface BookDetailPageProps {
     bookKey: string;
 }
 
+const hashBookId = (bookKey) => {
+    let hash = 0;
+    if (bookKey.length === 0) return hash;
+    for (let i = 0; i < bookKey.length; i++) {
+        const char = bookKey.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+};
+
 const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
     const navigate = useNavigate();
     const [book, setBook] = useState<BookDetail | null>(null);
@@ -67,14 +78,12 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
     const [backendAvailable, setBackendAvailable] = useState(false);
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
-    // Only destructure what you actually use to avoid TypeScript warnings
     const { isAuthenticated, accessToken } = useAuth();
 
     useEffect(() => {
         fetchBookDetails();
         checkBackendAndFetchReviews();
 
-        // If user is authenticated, set up mock user (replace with actual user fetching)
         if (isAuthenticated && accessToken) {
             // Mock user - replace with actual API call
             setCurrentUser({
@@ -122,7 +131,7 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
 
     const fetchReviewsFromDatabase = async () => {
         try {
-            const bookId = bookKey;
+            const bookId = hashBookId(bookKey);
 
             const [reviewsData, statsData] = await Promise.all([
                 reviewsAPI.getByBookId(bookId),
@@ -150,25 +159,25 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
         const mockReviews: Review[] = [
             {
                 id: 1,
-                external_book_id: bookKey,
+                book_id: bookKey,
                 book_title: book?.title || 'Unknown',
                 book_author: book?.authors?.[0]?.name || 'Unknown',
                 user_id: 2,
                 username: "Sarah Johnson",
                 rating: 5,
-                comment: "Absolutely captivating! One of the best books I've read this year.",
+                review_text: "Absolutely captivating! One of the best books I've read this year.",
                 created_at: "2024-01-15T00:00:00Z",
                 updated_at: "2024-01-15T00:00:00Z"
             },
             {
                 id: 2,
-                external_book_id: bookKey,
+                book_id: bookKey,
                 book_title: book?.title || 'Unknown',
                 book_author: book?.authors?.[0]?.name || 'Unknown',
                 user_id: 3,
                 username: "Mike Chen",
                 rating: 4,
-                comment: "Great read overall. Would recommend!",
+                review_text: "Great read overall. Would recommend!",
                 created_at: "2024-01-10T00:00:00Z",
                 updated_at: "2024-01-10T00:00:00Z"
             }
@@ -202,13 +211,15 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
         try {
             if (backendAvailable) {
                 const reviewData = {
-                    external_book_id: bookKey,
+                    book_id: hashBookId(bookKey),
                     book_title: book?.title || 'Unknown Title',
                     book_author: book?.authors?.[0]?.name || 'Unknown Author',
                     user_id: currentUser.id,
                     rating: userRating,
-                    comment: userReview.trim()
+                    review_text: userReview.trim()
                 };
+
+                console.log('About to send review data:', JSON.stringify(reviewData, null, 2));
 
                 const response = await fetch('http://localhost:5000/api/reviews', {
                     method: 'POST',
@@ -230,11 +241,11 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                 // Mock submission
                 const newReview: Review = {
                     id: Date.now(),
-                    external_book_id: bookKey,
+                    book_id: bookKey,
                     user_id: currentUser.id,
                     username: currentUser.username,
                     rating: userRating,
-                    comment: userReview,
+                    review_text: userReview,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                     book_title: book?.title || '',
@@ -273,7 +284,11 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
 
     const getAverageRating = () => {
         if (backendAvailable && bookStats) {
-            return bookStats.average_rating?.toFixed(1) || "0.0";
+            // Check if average_rating exists and is a valid number
+            const avgRating = bookStats.average_rating;
+            if (avgRating !== null && avgRating !== undefined && typeof avgRating === 'number') {
+                return avgRating.toFixed(1);
+            }
         }
         if (reviews.length === 0) return "0.0";
         const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
@@ -491,7 +506,7 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                                             <div className="mb-2">
                                                 {renderStars(review.rating)}
                                             </div>
-                                            <p className="text-gray-700 text-sm mb-2">{review.comment}</p>
+                                            <p className="text-gray-700 text-sm mb-2">{review.review_text}</p>
                                             <div className="flex items-center gap-4 text-xs text-gray-500">
                                                 <button className="text-blue-600 hover:underline flex items-center gap-1">
                                                     <ThumbsUp className="h-3 w-3" />
