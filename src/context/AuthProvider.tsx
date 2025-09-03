@@ -1,73 +1,106 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { getCookie, setCookie, deleteCookie } from "../utils/cookies.ts";
-import { jwtDecode } from "jwt-decode";
-import { login, type LoginFields } from "../api/login.ts";
+import { login, type LoginFields } from "../api/login";
 import { AuthContext } from "./AuthContext";
 
-type JwtPayload = {
-    email?: string;
-    tenant_id?: string;
-};
+interface User {
+    id: number;
+    username: string;
+    email: string;
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [tenantId, setTenantId] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = getCookie("access_token");
+        const token = localStorage.getItem('authToken');
+        const storedUser = localStorage.getItem('user');
+
         setAccessToken(token ?? null);
-        if (token) {
+
+        if (token && storedUser) {
             try {
-                const decoded = jwtDecode<JwtPayload>(token);
-                console.log(decoded);
-                setTenantId(decoded.tenant_id ?? null);
-            } catch {
-                setTenantId(null);
+                const userData = JSON.parse(storedUser);
+                setCurrentUser(userData);
+                console.log('Restored auth session for user:', userData.username);
+            } catch (error) {
+                console.error('Error parsing stored user data:', error);
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+                setAccessToken(null);
+                setCurrentUser(null);
             }
         } else {
-            setTenantId(null);
+            setCurrentUser(null);
         }
+
+        setTenantId(null);
         setLoading(false);
     }, []);
 
     const loginUser = async (fields: LoginFields) => {
-        const res = await login(fields);
-        setCookie("access_token", res.access_token, {
-            expires: 1,
-            sameSite: "Lax",
-            secure: false,
-            path: "/",
-        });
-
-        setAccessToken(res.access_token);
-
         try {
-            const decoded = jwtDecode<JwtPayload>(res.access_token);
-            setTenantId(decoded.tenant_id ?? null);
-        } catch {
+            console.log('Attempting login for user:', fields.username);
+            const res = await login(fields);
+
+            // Store token in localStorage
+            localStorage.setItem('authToken', res.access_token);
+            setAccessToken(res.access_token);
+
+            const tokenParts = res.access_token.split('_');
+            const userId = parseInt(tokenParts[1]);
+
+            const userData: User = {
+                id: userId,
+                username: fields.username,
+                email: fields.username
+            };
+
+            setCurrentUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
+
             setTenantId(null);
+
+            console.log('Login successful for user:', userData.username);
+        } catch (error) {
+            console.error('Login failed:', error);
+            throw error;
         }
     };
 
     const logoutUser = () => {
-        deleteCookie("access_token");
+        console.log('Logging out user:', currentUser?.username);
+
+
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+
         setAccessToken(null);
+        setCurrentUser(null);
         setTenantId(null);
     };
 
     return (
         <AuthContext.Provider
             value={{
-                isAuthenticated: !!accessToken,
+                isAuthenticated: !!currentUser && !!accessToken,
                 accessToken,
                 tenantId,
+                currentUser,
                 loginUser,
                 logoutUser,
                 loading,
             }}
         >
-            {loading ? null : children}
+            {loading ? (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            ) : (
+                children
+            )}
         </AuthContext.Provider>
     );
 };

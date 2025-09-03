@@ -1,24 +1,20 @@
 import { createContext } from "react";
-import type { LoginFields } from "@/api/login.ts";
+import type { LoginFields } from "../api/login.ts";
 
 interface User {
     id: number;
     username: string;
     email: string;
-    created_at?: string;
 }
 
-type AuthContextProps = {
+export type AuthContextType = {
     isAuthenticated: boolean;
-    currentUser: User | null; // Add current user to context
     accessToken: string | null;
     tenantId: string | null;
+    currentUser: User | null;
     loginUser: (fields: LoginFields) => Promise<void>;
     logoutUser: () => void;
     loading: boolean;
-    refreshUser?: () => Promise<void>;
-};
+}
 
-export const AuthContext = createContext<AuthContextProps | undefined>(
-    undefined,
-);
+export const AuthContext = createContext<AuthContextType | null>(null);
