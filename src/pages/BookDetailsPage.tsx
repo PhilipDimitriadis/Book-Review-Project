@@ -76,24 +76,11 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
     const [userHasReviewed, setUserHasReviewed] = useState(false);
     const [submittingReview, setSubmittingReview] = useState(false);
     const [backendAvailable, setBackendAvailable] = useState(false);
-    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-
-    const { isAuthenticated, accessToken } = useAuth();
+    const { isAuthenticated, accessToken, currentUser } = useAuth();
 
     useEffect(() => {
         fetchBookDetails();
         checkBackendAndFetchReviews();
-
-        if (isAuthenticated && accessToken) {
-            // Mock user - replace with actual API call
-            setCurrentUser({
-                id: 1,
-                username: "demo_user",
-                email: "demo@example.com"
-            });
-        } else {
-            setCurrentUser(null);
-        }
     }, [bookKey, isAuthenticated, accessToken]);
 
     const fetchBookDetails = async () => {
@@ -238,7 +225,6 @@ const BookDetailPage = ({ bookKey }: BookDetailPageProps) => {
                     alert(`Failed to submit review: ${error.error || 'Unknown error'}`);
                 }
             } else {
-                // Mock submission
                 const newReview: Review = {
                     id: Date.now(),
                     book_id: bookKey,
