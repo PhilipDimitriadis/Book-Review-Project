@@ -24,7 +24,7 @@ export default function LoginPage() {
         try {
             await loginUser(data);
             toast.success("Login successfully");
-            navigate("/products");
+            navigate("/reviews");
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Login failed");
         }
