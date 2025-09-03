@@ -30,6 +30,8 @@ Authentication System
 * Token-based authentication
 * Protected routes and components
 * Persistent login sessions
+### ONLY ONE USER CREATED FOR TESTING (username: user, password: password)
+
 
 Book Discovery
 * Integration with Open Library API
@@ -57,3 +59,10 @@ Data Flow
 ![img_2.png](img_2.png)
 
 ![img_3.png](img_3.png)
+
+# Database Images
+Reviews
+![img_4.png](img_4.png)
+
+Users
+![img_5.png](img_5.png)
